@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Brain Tumor Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #000000, #1a1a1a); /* black to dark gray */
+            color: #e0e0e0; /* light gray text for contrast */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: rgba(30, 30, 30, 0.85); /* dark translucent background */
+            padding: 30px;
+            border-radius: 15px;
+            width: 400px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.8);
+        }
+        h2 {
+            color: #00ffbf; /* bright accent */
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            background: #222222;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #444444;
+            width: 100%;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #00ffbf;
+            color: #000;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #00d49c;
+            transform: scale(1.05);
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #ccc;
+        }
+        #preview {
+            margin-top: 15px;
+            width: 100%;
+            border-radius: 10px;
+            display: none;
+            box-shadow: 0 0 8px #00ffbf;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🧠 Brain Tumor Detection</h2>
+        <input type="file" id="fileInput" accept="image/*" onchange="showPreview(event)" />
+        <img id="preview" />
+        <button onclick="predict()">🔍 Predict</button>
+        <h3 id="output"></h3>
+    </div>
+
+    <script>
+        function showPreview(event) {
+            const img = document.getElementById("preview");
+            img.src = URL.createObjectURL(event.target.files[0]);
+            img.style.display = "block";
+        }
+
+        async function predict() {
+            let file = document.getElementById("fileInput").files[0];
+            if (!file) {
+                alert("Please select an image file first!");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/predict", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById("output").innerHTML = "❌ Error: " + data.error;
+                    return;
+                }
+
+                const prediction = data.prediction;
+                const confidence = data.probabilities ? data.probabilities[1] : null;
+
+                document.getElementById("output").innerHTML =
+                    `Prediction: <b>${prediction}</b><br>` +
+                    (confidence !== null ? `Confidence: <b>${(confidence * 100).toFixed(2)}%</b>` : "");
+
+            } catch (error) {
+                document.getElementById("output").innerHTML = "❌ Request failed: " + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
